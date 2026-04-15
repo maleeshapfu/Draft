@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion OS Workspace</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            /* Light Mode Variables */
+            --bg-outer: #e9ecef;
+            --bg-app: #ffffff;
+            --bg-sidebar: #fbfbfa;
+            --bg-list: #ffffff;
+            --bg-hover: #f1f3f5;
+            --bg-active: #e9ecef;
+            --text-main: #212529;
+            --text-muted: #868e96;
+            --border-color: #dee2e6;
+            --accent: #212529;
+            --tag-bg: #f1f3f5;
+            --tag-text: #495057;
+            --shadow-app: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+            --font-ui: 'Inter', sans-serif;
+            --font-doc: 'Encode Sans', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-outer: #121212;
+            --bg-app: #191919;
+            --bg-sidebar: #202020;
+            --bg-list: #191919;
+            --bg-hover: #2d2d2d;
+            --bg-active: #333333;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --accent: #ffffff;
+            --tag-bg: #333333;
+            --tag-text: #cccccc;
+            --shadow-app: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-outer);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; outline: none; }
+        input, select { font-family: inherit; outline: none; }
+
+        /* App Container Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 240px 320px 1fr;
+            width: 100vw;
+            max-width: 1600px;
+            height: 100vh;
+            max-height: 1000px;
+            background-color: var(--bg-app);
+            box-shadow: var(--shadow-app);
+            overflow: hidden;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @media(min-width: 1400px) {
+            .app-container { border-radius: 16px; height: 95vh; width: 95vw; }
+        }
+
+        /* ==== SIDEBAR ==== */
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar { display: none; }
+
+        .profile-section {
+            display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .profile-section:hover { background-color: var(--bg-hover); }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background-color: var(--bg-active); }
+        .username { font-weight: 600; font-size: 14px; flex-grow: 1; }
+
+        .section-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin: 24px 0 8px 12px; letter-spacing: 0.5px; }
+
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
+            cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.2s; font-weight: 500;
+        }
+        .nav-item:hover { background-color: var(--bg-hover); color: var(--text-main); }
+        .nav-item.active { background-color: var(--bg-active); color: var(--text-main); font-weight: 600; }
+        .nav-item .ph { font-size: 18px; }
+        .folder-actions { margin-left: auto; display: none; opacity: 0.7; }
+        .nav-item:hover .folder-actions { display: block; }
+        .folder-actions:hover { opacity: 1; }
+
+        .sidebar-bottom { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; gap: 4px; }
+
+        /* ==== MIDDLE COLUMN ==== */
+        .middle-col {
+            background-color: var(--bg-list);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .list-header { padding: 24px; border-bottom: 1px solid transparent; transition: border-bottom 0.2s; }
+        .list-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+        .add-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px;
+            background-color: var(--bg-app); border: 1px solid var(--border-color); border-radius: 6px;
+            font-size: 13px; font-weight: 500; color: var(--text-main); transition: all 0.2s;
+        }
+        .add-btn:hover { background-color: var(--bg-hover); box-shadow: var(--shadow-hover); }
+
+        .list-scroll-area { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .list-scroll-area::-webkit-scrollbar { width: 6px; }
+        .list-scroll-area::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+        .list-card {
+            background-color: var(--bg-app); padding: 14px; border-radius: 8px; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02); border: 1px solid var(--border-color); transition: all 0.2s;
+        }
+        .list-card:hover { border-color: var(--text-muted); }
+        .list-card.active { border-color: var(--accent); background-color: var(--bg-hover); }
+        .card-date { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-snippet { font-size: 12px; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .menu-filter-item {
+            padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; color: var(--text-muted);
+        }
+        .menu-filter-item:hover { background-color: var(--bg-hover); }
+        .menu-filter-item.active { background-color: var(--bg-hover); color: var(--text-main); font-weight: 600; }
+
+        /* ==== RIGHT EDIT COLUMN ==== */
+        .editor-col {
+            background-color: var(--bg-app); display: flex; flex-direction: column; position: relative;
+        }
+        .editor-empty {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-muted); z-index: 10; background-color: var(--bg-app);
+        }
+        
+        .pane-view { display: none; flex-direction: column; height: 100%; position: absolute; inset:0; overflow:hidden; }
+        .pane-view.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        /* Shared Detail Header */
+        .detail-header { padding: 24px 32px 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .detail-title-input { width: 100%; font-size: 32px; font-weight: 700; font-family: var(--font-doc); border: none; background: none; color: var(--text-main); margin-bottom: 16px; }
+        
+        .meta-grid { display: grid; grid-template-columns: 120px 1fr; gap: 12px; font-size: 13px; margin-bottom: 8px; align-items: center;}
+        .meta-label { color: var(--text-muted); }
+        .meta-value { color: var(--text-main); display: flex; align-items: center; gap: 8px; flex-wrap:wrap;}
+        
+        .custom-select { background:var(--bg-hover); border:1px solid var(--border-color); color:var(--text-main); padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;}
+
+        /* Rich Editor Toolbars */
+        .editor-toolbar {
+            display: flex; align-items: center; gap: 4px; padding: 8px 32px;
+            border-bottom: 1px solid var(--border-color); background-color: var(--bg-app); flex-shrink: 0;
+        }
+        .tool-btn { width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-main); }
+        .tool-btn:hover { background-color: var(--bg-hover); }
+        .tool-divider { width: 1px; height: 20px; background-color: var(--border-color); margin: 0 8px; }
+        
+        /* Content Areas */
+        .detail-content-wrap { flex-grow: 1; overflow-y: auto; padding: 32px; max-width: 900px; margin: 0 auto; width: 100%; }
+        .rich-editor { font-family: var(--font-doc); font-size: 16px; line-height: 1.6; color: var(--text-main); min-height: 100%; outline:none;}
+        .rich-editor:empty::before { content: "Start writing..."; color: var(--text-muted); pointer-events: none; }
+
+        /* Specific Modules */
+        /* ToDos */
+        .todo-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .todo-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: var(--text-main); }
+        .todo-text { flex-grow: 1; font-size: 15px; border:none; background:none; color:var(--text-main); }
+        .todo-item.completed .todo-text { text-decoration: line-through; color: var(--text-muted); }
+        .todo-add-box { display:flex; padding:16px 32px; border-bottom:1px solid var(--border-color); background:var(--bg-hover); }
+        .todo-add-box input { flex-grow:1; padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-app); color:var(--text-main); }
+        
+        /* Project Specifics */
+        .project-section-title { font-weight:600; font-size:14px; color:var(--text-muted); text-transform:uppercase; margin:24px 0 12px 0; }
+        
+        /* Reading List */
+        .reading-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+        .reading-card { background:var(--bg-app); border:1px solid var(--border-color); border-radius:8px; padding:16px; }
+        .reading-card-title { font-weight:600; margin-bottom:8px;}
+        .reading-card a { color:#3b82f6; text-decoration:none; font-size:13px; display:block; margin-bottom:12px;}
+        
+        /* Inlines */
+        .tag { font-size: 11px; background-color: var(--tag-bg); color: var(--tag-text); padding: 4px 8px; border-radius: 4px; }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100; padding: 16px;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box { 
+            background-color: var(--bg-app); padding: 24px; border-radius: 12px; width: 100%; max-width: 400px; 
+            box-shadow: var(--shadow-app); transform: translateY(20px); transition: transform 0.3s; 
+            max-height: 85vh; overflow-y: auto; 
+        }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed; inset: 0; background-color: rgba(0,0,0,0.4); z-index: 24; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* Responsive Overrides */
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 320px 1fr; }
+            .sidebar { position: fixed; top:0; bottom:0; left:0; transform: translateX(-100%); z-index: 25; width: 280px; transition: transform 0.3s ease; box-shadow: var(--shadow-app); }
+            .sidebar.active { transform: translateX(0); }
+            .mobile-menu-btn { display: inline-flex !important; }
+        }
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: 1fr; }
+            .editor-col { position: absolute; inset: 0; transform: translateX(100%); transition: transform 0.3s ease; z-index: 20; background-color: var(--bg-app); }
+            .editor-col.active { transform: translateX(0); }
+            .mobile-back-btn { display: inline-flex !important; }
+            
+            /* Tap Target & Typography increases for Mobile */
+            .tool-btn { width: 48px; height: 48px; }
+            .tool-btn i.ph { font-size: 24px; }
+            
+            .nav-item { padding: 14px; font-size: 16px; }
+            .nav-item .ph { font-size: 24px; }
+            .username { font-size: 16px; }
+            .avatar { width: 44px; height: 44px; }
+            
+            .list-card { padding: 18px; }
+            .card-title { font-size: 16px; margin-bottom: 6px; }
+            .card-snippet { font-size: 14px; line-height: 1.5;}
+            #mid-header-title { font-size: 24px; }
+            .add-btn { font-size: 16px; padding: 14px; }
+            
+            .detail-header { padding: 16px; }
+            .detail-title-input { font-size: 28px; }
+            .rich-editor { font-size: 18px; line-height: 1.6; }
+            .todo-text { font-size: 17px; }
+            .menu-filter-item { font-size: 16px; padding: 12px 16px; }
+            
+            .editor-toolbar { padding: 8px 16px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .editor-toolbar::-webkit-scrollbar { display: none; }
+            .detail-content-wrap { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="app-sidebar">
+        <div class="profile-section" onclick="UI.openProfileModal()">
+            <img src="" alt="Avatar" class="avatar" id="sidebar-avatar">
+            <span class="username" id="sidebar-username">User</span>
+            <i class="ph ph-caret-down"></i>
+        </div>
+
+        <div class="section-label" style="margin-top:24px;">Workspace</div>
+        <ul class="nav-menu" id="nav-workspaces">
+            <li class="nav-item active" data-mod="notes"><i class="ph ph-notebook"></i> My Notes</li>
+            <li class="nav-item" data-mod="todos"><i class="ph ph-check-square"></i> To-do list</li>
+            <li class="nav-item" data-mod="projects"><i class="ph ph-briefcase"></i> Projects</li>
+            <li class="nav-item" data-mod="journal"><i class="ph ph-book-open"></i> Journal</li>
+            <li class="nav-item" data-mod="reading"><i class="ph ph-books"></i> Reading List</li>
+        </ul>
+
+        <div class="section-label">Folders</div>
+        <ul class="nav-menu" id="nav-folders">
+            <!-- Folders populated dynamically -->
+        </ul>
+
+        <div class="sidebar-bottom">
+            <button class="nav-item" onclick="UI.promptFolderCreate()"><i class="ph ph-folder-plus"></i> Add new folder</button>
+            <button class="nav-item" id="theme-toggle"><i class="ph ph-moon"></i> Theme Toggle</button>
+        </div>
+    </aside>
+
+    <!-- MIDDLE COLUMN -->
+    <section class="middle-col">
+        <div class="list-header">
+            <h2 id="mid-header-title">My Notes</h2>
+            <button class="add-btn" id="mid-add-btn">
+                <i class="ph ph-plus"></i> <span id="mid-add-txt">Add Note</span>
+            </button>
+        </div>
+        <div class="list-scroll-area" id="mid-list-area">
+            <!-- List cards go here -->
+        </div>
+    </section>
+
+    <!-- RIGHT EDITOR COLUMN -->
+    <main class="editor-col" id="editor-pane">
+        <div class="editor-empty" id="editor-empty-state">
+            <i class="ph ph-intersect" style="font-size: 48px; margin-bottom: 16px;"></i>
+            <h3 id="empty-hint">Select an item or create a new one</h3>
+        </div>
+
+        <!-- RICH EDITOR PANE (Notes & Journal & Projects scratchpad) -->
+        <div class="pane-view" id="pane-rich">
+            <div class="detail-header">
+                <div class="breadcrumb">
+                    <span style="display:flex; align-items:center;">
+                        <button class="tool-btn mobile-menu-btn" style="display:none; margin-right:8px;" onclick="UI.toggleSidebar()"><i class="ph ph-list"></i></button>
+                        <span id="breadcrumb-rich">My Notes > Untitled</span>
+                    </span>
+                    <div>
+                        <button class="tool-btn mobile-back-btn" style="display:none;" onclick="UI.closeEditor()"><i class="ph ph-arrow-left"></i></button>
+                        <button class="tool-btn" onclick="App.deleteActiveItem()"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>
+                <input type="text" class="detail-title-input" id="rich-title" placeholder="Untitled">
+                <div class="meta-grid" id="rich-meta-grid">
+                    <span class="meta-label">Folder</span>
+                    <span class="meta-value">
+                        <select class="custom-select" id="rich-folder-select" onchange="App.assignFolderToActive(this.value)">
+                            <option value="">None</option>
+                        </select>
+                    </span>
+                    <span class="meta-label">Last Modified</span>
+                    <span class="meta-value" id="rich-date">Just now</span>
+                </div>
+            </div>
+            <div class="editor-toolbar" id="rich-toolbar">
+                <button class="tool-btn" data-command="bold"><i class="ph ph-text-b"></i></button>
+                <button class="tool-btn" data-command="italic"><i class="ph ph-text-italic"></i></button>
+                <button class="tool-btn" data-command="underline"><i class="ph ph-text-underline"></i></button>
+                <div class="tool-divider"></div>
+                <button class="tool-btn" data-command="insertUnorderedList"><i class="ph ph-list-bullets"></i></button>
+                <button class="tool-btn" id="attach-btn"><i class="ph ph-paperclip"></i></button>
+                <input type="file" id="file-input" style="display: none;" multiple>
+            </div>
+            <div class="detail-content-wrap">
+                <div class="rich-editor" id="rich-content" contenteditable="true"></div>
+            </div>
+        </div>
+
+        <!-- TO-DO LIST PANE -->
+        <div class="pane-view" id="pane-todos">
+            <div class="detail-header">
+                <div class="breadcrumb">
+                    <span style="display:flex; align-items:center;">
+                        <button class="tool-btn mobile-menu-btn" style="display:none; margin-right:8px;" onclick="UI.toggleSidebar()"><i class="ph ph-list"></i></button>
+                        <span id="breadcrumb-todo">To-Do > Filter</span>
+                    </span>
+                    <button class="tool-btn mobile-back-btn" style="display:none;" onclick="UI.closeEditor()"><i class="ph ph-arrow-left"></i></button>
+                </div>
+                <!-- To-Do Addition inside pane -->
+            </div>
+            <div class="todo-add-box">
+                <input type="text" id="todo-input" placeholder="What needs to be done? (Press Enter)" onkeypress="if(event.key==='Enter') App.addTodo(this.value)">
+            </div>
+            <div class="detail-content-wrap" id="todo-list-wrap" style="padding-top:0;">
+                <!-- Tasks injected here -->
+            </div>
+        </div>
+
+        <!-- PROJECT DETAIL PANE -->
+        <div class="pane-view" id="pane-projects">
+            <div class="detail-header">
+                <div class="breadcrumb">
+                    <span style="display:flex; align-items:center;">
+                        <button class="tool-btn mobile-menu-btn" style="display:none; margin-right:8px;" onclick="UI.toggleSidebar()"><i class="ph ph-list"></i></button>
+                        <span id="breadcrumb-proj">Projects > Untitled</span>
+                    </span>
+                    <div>
+                        <button class="tool-btn mobile-back-btn" style="display:none;" onclick="UI.closeEditor()"><i class="ph ph-arrow-left"></i></button>
+                        <button class="tool-btn" onclick="App.deleteActiveItem()"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>
+                <input type="text" class="detail-title-input" id="proj-title" placeholder="Project Name">
+                <input type="text" id="proj-desc" style="width:100%; border:none; background:none; color:var(--text-muted); font-size:14px;" placeholder="Optional description...">
+            </div>
+            <div class="detail-content-wrap" style="padding-top: 16px;">
+                <div class="project-section-title">Project Tasks</div>
+                <div class="todo-add-box" style="padding:0; border:none; margin-bottom:12px; background:none;">
+                    <input type="text" id="proj-todo-input" placeholder="Add task to project..." onkeypress="if(event.key==='Enter') App.addTodo(this.value, App.activeItemId)">
+                </div>
+                <div id="proj-todo-wrap" style="margin-bottom: 32px;"></div>
+            </div>
+        </div>
+
+        <!-- READING LIST PANE -->
+        <div class="pane-view" id="pane-reading">
+            <div class="detail-header">
+                <div class="breadcrumb">
+                    <span style="display:flex; align-items:center;">
+                        <button class="tool-btn mobile-menu-btn" style="display:none; margin-right:8px;" onclick="UI.toggleSidebar()"><i class="ph ph-list"></i></button>
+                        <span id="breadcrumb-reading">Reading List</span>
+                    </span>
+                    <button class="tool-btn mobile-back-btn" style="display:none;" onclick="UI.closeEditor()"><i class="ph ph-arrow-left"></i></button>
+                </div>
+                <div class="todo-add-box" style="padding:16px 0; border:none; background:none; display:flex; gap:12px;">
+                    <input type="text" id="reading-title" placeholder="Book / Article Title">
+                    <input type="url" id="reading-url" placeholder="https://..." style="max-width:300px;">
+                    <button class="add-btn" style="width:auto; padding:0 24px;" onclick="App.addReadingItem()">Add</button>
+                </div>
+            </div>
+            <div class="detail-content-wrap" style="padding-top:16px;">
+                <div class="reading-grid" id="reading-grid-wrap"></div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Standard Modals -->
+<div class="modal-overlay" id="profile-modal">
+    <div class="modal-box">
+        <h3>Edit Profile</h3>
+        <input type="text" id="profile-name-input" style="width:100%; margin-top:16px; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-list); color:var(--text-main);" placeholder="Username">
+        <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:8px;">
+            <button onclick="UI.closeModals()" style="padding:8px 16px; background:var(--bg-hover); border-radius:6px;">Cancel</button>
+            <button onclick="App.saveProfile()" style="padding:8px 16px; background:var(--text-main); color:var(--bg-app); border-radius:6px;">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="prompt-modal">
+    <div class="modal-box">
+        <h3 id="prompt-title">Action</h3>
+        <input type="text" id="prompt-input" style="width:100%; margin-top:16px; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-list); color:var(--text-main);">
+        <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:8px;">
+            <button onclick="UI.closeModals()" style="padding:8px 16px; background:var(--bg-hover); border-radius:6px;">Cancel</button>
+            <button id="prompt-confirm" style="padding:8px 16px; background:var(--text-main); color:var(--bg-app); border-radius:6px;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="preview-modal" onclick="UI.closeModals()">
+    <div class="modal-box" style="max-width: 90vw; max-height: 90vh; background: transparent; box-shadow: none; display: flex; align-items:center; justify-content:center; position: relative;" onclick="event.stopPropagation()">
+        <button onclick="UI.closeModals()" style="position:absolute; top:-40px; right:0; color:#fff; font-size:24px; background:rgba(0,0,0,0.5); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;"><i class="ph ph-x"></i></button>
+        <div id="preview-content" style="max-width:100%; max-height:80vh; overflow:hidden; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.5)"></div>
+    </div>
+</div>
+
+<script>
+/**
+ * Database V2 Wrapper
+ */
+const DB = {
+    db: null,
+    async init() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('NotionOSDB', 2);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('profile')) db.createObjectStore('profile', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('notes')) db.createObjectStore('notes', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('todos')) db.createObjectStore('todos', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('journal')) db.createObjectStore('journal', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('readingList')) db.createObjectStore('readingList', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('folders')) db.createObjectStore('folders', { keyPath: 'id' });
+            };
+            req.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+            req.onerror = (e) => reject(e);
+        });
+    },
+    async get(store, id) { return new Promise(r => { let req = this.db.transaction(store).objectStore(store).get(id); req.onsuccess=()=>r(req.result); }); },
+    async put(store, item) { return new Promise(r => { let req = this.db.transaction(store, 'readwrite').objectStore(store).put(item); req.onsuccess=()=>r(); }); },
+    async getAll(store) { return new Promise(r => { let req = this.db.transaction(store).objectStore(store).getAll(); req.onsuccess=()=>r(req.result||[]); }); },
+    async delete(store, id) { return new Promise(r => { let req = this.db.transaction(store, 'readwrite').objectStore(store).delete(id); req.onsuccess=()=>r(); }); }
+};
+
+/**
+ * App Core
+ */
+const App = {
+    activeModule: 'notes',   // notes | todos | projects | journal | reading | folder_{id}
+    activeItemId: null,
+    theme: localStorage.getItem('theme') || 'light',
+    data: { notes:[], todos:[], projects:[], journal:[], readingList:[], folders:[], profile:{} },
+    activeBlobUrls: [], // For garbage collection
+    
+    async init() {
+        await DB.init();
+        document.documentElement.setAttribute('data-theme', this.theme);
+        
+        let p = await DB.get('profile', 'me');
+        this.data.profile = p || { id: 'me', name: 'User', avatar: 'https://ui-avatars.com/api/?name=User&background=random' };
+        UI.updateProfileUi();
+
+        // Hydrate data concurrently
+        [
+            this.data.notes, this.data.todos, this.data.projects, 
+            this.data.journal, this.data.readingList, this.data.folders
+        ] = await Promise.all([
+            DB.getAll('notes'), DB.getAll('todos'), DB.getAll('projects'),
+            DB.getAll('journal'), DB.getAll('readingList'), DB.getAll('folders')
+        ]);
+
+        this.setupListeners();
+        UI.renderSidebarFolders();
+        this.switchModule('notes');
+    },
+
+    setupListeners() {
+        document.getElementById('theme-toggle').onclick = () => {
+            this.theme = this.theme==='light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', this.theme);
+            localStorage.setItem('theme', this.theme);
+        };
+
+        document.querySelectorAll('.nav-item[data-mod]').forEach(i => {
+            i.onclick = () => this.switchModule(i.getAttribute('data-mod'));
+        });
+
+        document.getElementById('mid-add-btn').onclick = () => this.handleAddNew();
+
+        // Standard rich editor autosave & formatting
+        const reTitle = document.getElementById('rich-title');
+        const reContent = document.getElementById('rich-content');
+        reTitle.oninput = () => { this.debounceSave(); UI.updateMidListItemTitle(this.activeItemId, reTitle.value); };
+        reContent.oninput = () => this.debounceSave();
+
+        document.querySelectorAll('.tool-btn[data-command]').forEach(btn => {
+            btn.onclick = (e) => { e.preventDefault(); document.execCommand(btn.getAttribute('data-command'), false, null); reContent.focus(); this.saveActiveItem(); }
+        });
+        
+        const attachBtn = document.getElementById('attach-btn');
+        const fileInput = document.getElementById('file-input');
+        if(attachBtn && fileInput) {
+            attachBtn.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => this.handleFiles(e.target.files);
+        }
+
+        // Project specific
+        const prjTitle = document.getElementById('proj-title');
+        const prjDesc = document.getElementById('proj-desc');
+        prjTitle.oninput = () => { this.debounceSave(); UI.updateMidListItemTitle(this.activeItemId, prjTitle.value); };
+        prjDesc.oninput = () => this.debounceSave();
+    },
+
+    switchModule(moduleId) {
+        this.clearBlobCache(); // Memory management
+        this.activeModule = moduleId;
+        this.activeItemId = null;
+        
+        // Update sidebar UI
+        document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+        const navEl = document.querySelector(`.nav-item[data-mod="${moduleId}"]`);
+        if(navEl) navEl.classList.add('active');
+
+        // Hide all panes
+        document.querySelectorAll('.pane-view').forEach(p=>p.classList.remove('active'));
+        UI.showEmptyState(true);
+
+        const midHeader = document.getElementById('list-header-title');
+        const addBtnTxt = document.getElementById('mid-add-txt');
+
+        if(moduleId === 'notes' || moduleId.startsWith('folder_')) {
+            let fName = "My Notes";
+            if(moduleId.startsWith('folder_')) {
+                const f = this.data.folders.find(f=>f.id === moduleId.replace('folder_',''));
+                if(f) fName = f.name;
+            }
+            UI.setupMidCol(fName, 'New Note', () => UI.renderNotesList(), true);
+        } 
+        else if(moduleId === 'todos') {
+            UI.setupMidCol('To-Do List', null, () => UI.renderTodoFilters(), false);
+            // Default filter active
+            setTimeout(()=> this.openTodoFilter('all'), 50);
+        }
+        else if(moduleId === 'projects') {
+            UI.setupMidCol('Projects', 'New Project', () => UI.renderProjectsList(), true);
+        }
+        else if(moduleId === 'journal') {
+            UI.setupMidCol('Journal', 'New Entry', () => UI.renderJournalList(), true);
+        }
+        else if(moduleId === 'reading') {
+            UI.setupMidCol('Reading List', null, () => UI.renderReadingFilters(), false);
+            setTimeout(()=> this.openReadingFilter('all'), 50);
+        }
+    },
+
+    handleAddNew() {
+        let mod = this.activeModule;
+        if(mod === 'notes' || mod.startsWith('folder_')) {
+            let folderId = mod.startsWith('folder_') ? mod.replace('folder_','') : null;
+            const note = { id:'n_'+Date.now(), title:'', content:'', snippet:'', tags:[], lastModified:Date.now(), folderId, attachments:{} };
+            this.data.notes.unshift(note);
+            this.save('notes', note).then(()=> { UI.renderNotesList(); this.openItem(note.id); });
+        }
+        else if(mod === 'projects') {
+            const p = { id:'p_'+Date.now(), title:'New Project', description:'', createdAt:Date.now() };
+            this.data.projects.unshift(p);
+            this.save('projects', p).then(()=> { UI.renderProjectsList(); this.openItem(p.id); });
+        }
+        else if(mod === 'journal') {
+            const dateStr = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+            const entry = { id:'j_'+Date.now(), title: dateStr, content:'', snippet:'', lastModified:Date.now() };
+            this.data.journal.unshift(entry);
+            this.save('journal', entry).then(()=> { UI.renderJournalList(); this.openItem(entry.id); });
+        }
+    },
+
+    openItem(id) {
+        this.clearBlobCache(); // Release memory from previous note's blobs
+        this.activeItemId = id;
+        UI.showEmptyState(false);
+        UI.highlightMidList(id);
+        
+        let mod = this.activeModule;
+        if(mod === 'notes' || mod.startsWith('folder_')) {
+            const item = this.data.notes.find(n=>n.id===id);
+            UI.openRichPane(item, 'notes');
+            UI.populateFolderDropdown(item.folderId || '');
+        }
+        else if(mod === 'journal') {
+            const item = this.data.journal.find(n=>n.id===id);
+            UI.openRichPane(item, 'journal');
+            document.getElementById('rich-meta-grid').style.display='none'; // hide folder select for journals
+        }
+        else if(mod === 'projects') {
+            const item = this.data.projects.find(n=>n.id===id);
+            UI.openProjectPane(item);
+        }
+    },
+
+    // TO-DO LOGIC
+    openTodoFilter(filter) {
+        UI.showEmptyState(false);
+        UI.highlightMidList('flt_'+filter);
+        document.getElementById('pane-todos').classList.add('active');
+        document.getElementById('breadcrumb-todo').innerText = `To-Do > ${filter.toUpperCase()}`;
+        this.renderPaneTodos(filter);
+        document.getElementById('editor-pane').classList.add('active');
+    },
+    
+    renderPaneTodos(filter = 'all', projectId = null) {
+        const wrap = projectId ? document.getElementById('proj-todo-wrap') : document.getElementById('todo-list-wrap');
+        wrap.innerHTML = '';
+        
+        let list = this.data.todos;
+        if(projectId) list = list.filter(t => t.projectId === projectId);
+        else list = list.filter(t => !t.projectId); // global tasks only
+        
+        // Sorting: incomplete first, then by date desc
+        list.sort((a,b) => (a.completed === b.completed) ? (b.id.split('_')[1] - a.id.split('_')[1]) : (a.completed ? 1 : -1));
+
+        list.forEach(t => {
+            if(filter === 'active' && t.completed) return;
+            if(filter === 'completed' && !t.completed) return;
+            
+            const div = document.createElement('div');
+            div.className = `todo-item ${t.completed?'completed':''}`;
+            div.innerHTML = `
+                <input type="checkbox" class="todo-checkbox" ${t.completed?'checked':''} onchange="App.toggleTodo('${t.id}')">
+                <input type="text" class="todo-text" value="${t.title}" onblur="App.updateTodo('${t.id}', this.value)" onkeypress="if(event.key==='Enter') this.blur();">
+                <button class="tool-btn" onclick="App.deleteTodo('${t.id}')"><i class="ph ph-trash"></i></button>
+            `;
+            wrap.appendChild(div);
+        });
+        if(list.length===0) wrap.innerHTML = `<p style="padding:16px; color:var(--text-muted); font-size:14px;">No tasks here.</p>`;
+    },
+
+    async addTodo(title, projectId = null) {
+        if(!title.trim()) return;
+        const nt = { id:'t_'+Date.now(), title: title.trim(), completed:false, projectId };
+        this.data.todos.push(nt);
+        await this.save('todos', nt);
+        
+        if(projectId) {
+            document.getElementById('proj-todo-input').value = '';
+            this.renderPaneTodos('all', projectId);
+        } else {
+            document.getElementById('todo-input').value = '';
+            this.openTodoFilter('all');
+        }
+    },
+    async toggleTodo(id) {
+        const t = this.data.todos.find(x=>x.id===id); if(!t)return;
+        t.completed = !t.completed; await this.save('todos', t);
+        if(t.projectId) this.renderPaneTodos('all', t.projectId);
+        else this.openTodoFilter('all'); // Refresh view
+    },
+    async updateTodo(id, newTitle) {
+        const t = this.data.todos.find(x=>x.id===id); if(!t || t.title===newTitle)return;
+        t.title = newTitle; await this.save('todos', t);
+    },
+    async deleteTodo(id) {
+        const t = this.data.todos.find(x=>x.id===id);
+        this.data.todos = this.data.todos.filter(x=>x.id!==id);
+        await DB.delete('todos', id);
+        if(t && t.projectId) this.renderPaneTodos('all', t.projectId);
+        else this.openTodoFilter('all');
+    },
+
+    // READING LIST LOGIC
+    openReadingFilter(filter) {
+        UI.showEmptyState(false);
+        UI.highlightMidList('flt_'+filter);
+        document.getElementById('pane-reading').classList.add('active');
+        document.getElementById('breadcrumb-reading').innerText = `Reading List > ${filter}`;
+        this.renderPaneReading(filter);
+        document.getElementById('editor-pane').classList.add('active');
+    },
+    renderPaneReading(filter = 'all') {
+        const wrap = document.getElementById('reading-grid-wrap');
+        wrap.innerHTML = '';
+        let list = this.data.readingList;
+        list.forEach(r => {
+            if(filter!=='all' && r.status !== filter) return;
+            const div = document.createElement('div');
+            div.className = 'reading-card';
+            div.innerHTML = `
+                <div class="reading-card-title">${r.title}</div>
+                ${r.link ? `<a href="${r.link}" target="_blank">${r.link}</a>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <select class="custom-select" onchange="App.changeReadingStatus('${r.id}', this.value)">
+                        <option value="saved" ${r.status==='saved'?'selected':''}>Saved</option>
+                        <option value="reading" ${r.status==='reading'?'selected':''}>Reading</option>
+                        <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
+                    </select>
+                    <button class="tool-btn" style="color:var(--text-muted);" onclick="App.deleteReading('${r.id}')"><i class="ph ph-trash"></i></button>
+                </div>
+            `;
+            wrap.appendChild(div);
+        });
+    },
+    async addReadingItem() {
+        const titleE = document.getElementById('reading-title');
+        const urlE = document.getElementById('reading-url');
+        if(!titleE.value.trim()) return;
+        const nr = { id:'r_'+Date.now(), title:titleE.value, link:urlE.value, status:'saved', dateAdded:Date.now() };
+        this.data.readingList.push(nr);
+        await this.save('readingList', nr);
+        titleE.value=''; urlE.value='';
+        this.openReadingFilter('all');
+    },
+    async changeReadingStatus(id, newStatus) {
+        const r = this.data.readingList.find(x=>x.id===id); if(!r)return;
+        r.status = newStatus; await this.save('readingList', r);
+    },
+    async deleteReading(id) {
+        this.data.readingList = this.data.readingList.filter(x=>x.id!==id);
+        await DB.delete('readingList', id);
+        this.openReadingFilter('all');
+    },
+
+    // GLOBAL SAVE / DEBOUNCE
+    debounceTimer: null,
+    debounceSave() {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => this.saveActiveItem(), 500);
+    },
+    async saveActiveItem() {
+        if(!this.activeItemId) return;
+        let mod = this.activeModule;
+        
+        if(mod === 'notes' || mod.startsWith('folder_')) {
+            const i = this.data.notes.find(x=>x.id===this.activeItemId);
+            i.title = document.getElementById('rich-title').value;
+            i.content = document.getElementById('rich-content').innerHTML;
+            i.snippet = document.getElementById('rich-content').innerText.substring(0,80).replace(/\n/g,' ');
+            i.lastModified = Date.now();
+            await this.save('notes', i);
+        }
+        else if(mod === 'journal') {
+            const i = this.data.journal.find(x=>x.id===this.activeItemId);
+            i.title = document.getElementById('rich-title').value;
+            i.content = document.getElementById('rich-content').innerHTML;
+            i.snippet = document.getElementById('rich-content').innerText.substring(0,80).replace(/\n/g,' ');
+            i.lastModified = Date.now();
+            await this.save('journal', i);
+        }
+        else if(mod === 'projects') {
+            const i = this.data.projects.find(x=>x.id===this.activeItemId);
+            i.title = document.getElementById('proj-title').value;
+            i.description = document.getElementById('proj-desc').value;
+            await this.save('projects', i);
+        }
+    },
+    async save(store, item) { 
+        try {
+            await DB.put(store, Object.assign({}, item));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'UnknownError') {
+                alert("Storage Quota Exceeded! Please delete some large file attachments to save your data.");
+                throw e; // fail loudly
+            }
+            console.error("DB Save Error:", e);
+        }
+    },
+    clearBlobCache() {
+        this.activeBlobUrls.forEach(url => URL.revokeObjectURL(url));
+        this.activeBlobUrls = [];
+    },
+
+    // FOLDERS
+    async assignFolderToActive(folderId) {
+        if(!this.activeItemId) return;
+        const note = this.data.notes.find(n=>n.id===this.activeItemId);
+        if(!note) return;
+        note.folderId = folderId;
+        await this.save('notes', note);
+        UI.renderNotesList(); // update list if currently in a filtered view
+    },
+
+    // DELETION
+    async deleteActiveItem() {
+        if(!this.activeItemId) return;
+        let mod = this.activeModule;
+        let store = '';
+        if(mod === 'notes' || mod.startsWith('folder_')) store='notes';
+        if(mod === 'journal') store='journal';
+        if(mod === 'projects') store='projects';
+        if(!store) return;
+
+        if(confirm("Delete this item permanently?")) {
+            await DB.delete(store, this.activeItemId);
+            this.data[store] = this.data[store].filter(x=>x.id!==this.activeItemId);
+            this.activeItemId = null;
+            UI.showEmptyState(true);
+            UI.closeEditor();
+            this.switchModule(mod); // re-render list
+        }
+    },
+
+    // ATTACHMENTS
+    async handleFiles(files) {
+        if (!this.activeItemId || files.length === 0) return;
+        let list = this.activeModule === 'journal' ? this.data.journal : this.data.notes;
+        const note = list.find(n => n.id === this.activeItemId);
+        if(!note.attachments) note.attachments = {};
+        
+        for(let f of files) {
+            const sizeMB = f.size / (1024 * 1024);
+            if (sizeMB > 50) {
+                alert(`File "${f.name}" is ${sizeMB.toFixed(1)}MB. Files over 50MB are blocked to prevent crashing.`);
+                continue;
+            }
+            if (sizeMB > 10 && !confirm(`File "${f.name}" is ${sizeMB.toFixed(1)}MB. Large files may cause performance drops. Continue?`)) {
+                continue;
+            }
+
+            const fId = 'f_'+Date.now()+Math.random();
+            // Backward/Forward preserving blob properly natively
+            note.attachments[fId] = { id: fId, type:f.type, name:f.name, size:f.size, blob:f, data:f, createdAt: Date.now() }; 
+            let url = URL.createObjectURL(f), html='';
+            this.activeBlobUrls.push(url);
+
+            if(f.type.startsWith('image/')) {
+                html=`<img src="${url}" loading="lazy" data-file-id="${fId}" style="max-width:100%; border-radius:8px; margin:16px 0; cursor:pointer;" onclick="UI.previewMediaFromElement(this, 'image')">`;
+            } else if(f.type.startsWith('video/')) {
+                html=`<video controls preload="none" data-file-id="${fId}" style="max-width:100%; max-height:400px; border-radius:8px; margin:16px 0; cursor:pointer;" onclick="UI.previewMediaFromElement(this, 'video')"></video>`;
+                setTimeout(() => {
+                    const videoEl = document.querySelector(`video[data-file-id="${fId}"]`);
+                    if(videoEl) videoEl.src = url;
+                }, 100);
+            } else {
+                html=`<div contenteditable="false" class="attachment-file" data-file-id="${fId}"><i class="ph ph-file" style="font-size:24px;"></i> <b>${f.name}</b></div>`;
+            }
+            document.getElementById('rich-content').focus();
+            document.execCommand('insertHTML', false, html + '<p><br></p>');
+        }
+        document.getElementById('file-input').value='';
+        
+        try {
+            await this.saveActiveItem();
+        } catch(e) {
+            console.error("Save failed, removing items locally to prevent silent crashing");
+            UI.showEmptyState(true);
+        }
+    },
+
+    restoreAttachmentURLs(note) {
+        if(!note.attachments) return;
+        const els = document.getElementById('rich-content').querySelectorAll('[data-file-id]');
+        
+        // Lazy loading intersection observer
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    const el = entry.target;
+                    const id = el.getAttribute('data-file-id');
+                    const att = note.attachments[id];
+                    // Backwards compat with `.data` or `.blob`
+                    const rawBlob = att ? (att.blob || att.data) : null; 
+                    if(rawBlob && !el.src) {
+                        const url = URL.createObjectURL(rawBlob);
+                        App.activeBlobUrls.push(url);
+                        if(el.tagName==='IMG'||el.tagName==='VIDEO') el.src = url;
+                        obs.unobserve(el);
+                    }
+                }
+            });
+        }, { root: document.getElementById('rich-content'), rootMargin: '200px' });
+
+        els.forEach(el => observer.observe(el));
+    }
+};
+
+/**
+ * UI Manipulation
+ */
+const UI = {
+    updateProfileUi() {
+        document.getElementById('sidebar-username').innerText = App.data.profile.name;
+        document.getElementById('sidebar-avatar').src = App.data.profile.avatar;
+    },
+    showEmptyState(show) {
+        document.getElementById('editor-empty-state').style.display = show ? 'flex' : 'none';
+        if(show) document.querySelectorAll('.pane-view').forEach(p=>p.classList.remove('active'));
+    },
+    setupMidCol(title, addBtnText, renderCb, showHeader) {
+        const dAddBtn = document.getElementById('mid-add-btn');
+        document.getElementById('mid-header-title').innerText = title;
+        if(addBtnText) { dAddBtn.style.display='flex'; document.getElementById('mid-add-txt').innerText=addBtnText; }
+        else { dAddBtn.style.display='none'; }
+        renderCb();
+    },
+    highlightMidList(id) {
+        document.querySelectorAll('.list-card, .menu-filter-item').forEach(e=>e.classList.remove('active'));
+        const el = document.getElementById('card_'+id);
+        if(el) el.classList.add('active');
+    },
+
+    // RENDERERS
+    renderNotesList() {
+        const wrap = document.getElementById('mid-list-area'); wrap.innerHTML='';
+        let activeF = App.activeModule.startsWith('folder_') ? App.activeModule.replace('folder_','') : null;
+        let list = App.data.notes.filter(n => (!activeF && !n.folderId) || n.folderId === activeF);
+        
+        list.sort((a,b)=> b.lastModified - a.lastModified).forEach(n => {
+            const d = new Date(n.lastModified).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+            wrap.innerHTML += `<div class="list-card" id="card_${n.id}" onclick="App.openItem('${n.id}')">
+                <div class="card-date">${d}</div>
+                <div class="card-title">${n.title || 'Untitled Note'}</div>
+                <div class="card-snippet">${n.snippet || '...'}</div>
+            </div>`;
+        });
+    },
+    renderProjectsList() {
+        const wrap = document.getElementById('mid-list-area'); wrap.innerHTML='';
+        App.data.projects.sort((a,b)=> b.createdAt - a.createdAt).forEach(p => {
+            wrap.innerHTML += `<div class="list-card" id="card_${p.id}" onclick="App.openItem('${p.id}')">
+                <div class="card-title">${p.title || 'Unnamed Project'}</div>
+                <div class="card-snippet" style="margin-top:6px;">${p.description || 'No description.'}</div>
+            </div>`;
+        });
+    },
+    renderJournalList() {
+        const wrap = document.getElementById('mid-list-area'); wrap.innerHTML='';
+        App.data.journal.sort((a,b)=> b.lastModified - a.lastModified).forEach(j => {
+            wrap.innerHTML += `<div class="list-card" id="card_${j.id}" onclick="App.openItem('${j.id}')">
+                <div class="card-title">${j.title}</div>
+                <div class="card-snippet">${j.snippet || '...'}</div>
+            </div>`;
+        });
+    },
+
+    renderTodoFilters() {
+        const wrap = document.getElementById('mid-list-area'); 
+        wrap.innerHTML=`
+            <div class="menu-filter-item" id="card_flt_all" onclick="App.openTodoFilter('all')">All Tasks</div>
+            <div class="menu-filter-item" id="card_flt_active" onclick="App.openTodoFilter('active')">Active</div>
+            <div class="menu-filter-item" id="card_flt_completed" onclick="App.openTodoFilter('completed')">Completed</div>
+        `;
+    },
+    renderReadingFilters() {
+        const wrap = document.getElementById('mid-list-area'); 
+        wrap.innerHTML=`
+            <div class="menu-filter-item" id="card_flt_all" onclick="App.openReadingFilter('all')">All Books</div>
+            <div class="menu-filter-item" id="card_flt_reading" onclick="App.openReadingFilter('reading')">Currently Reading</div>
+            <div class="menu-filter-item" id="card_flt_saved" onclick="App.openReadingFilter('saved')">Saved for later</div>
+            <div class="menu-filter-item" id="card_flt_completed" onclick="App.openReadingFilter('completed')">Completed</div>
+        `;
+    },
+
+    // PANES
+    openRichPane(item, type) {
+        document.getElementById('pane-rich').classList.add('active');
+        document.getElementById('breadcrumb-rich').innerHTML = `${type==='notes'?'My Notes':'Journal'} > ${item.title}`;
+        document.getElementById('rich-title').value = item.title;
+        document.getElementById('rich-content').innerHTML = item.content;
+        document.getElementById('rich-meta-grid').style.display = type==='notes' ? 'grid' : 'none';
+        App.restoreAttachmentURLs(item);
+        document.getElementById('editor-pane').classList.add('active'); // mobile view slide
+    },
+    openProjectPane(p) {
+        document.getElementById('pane-projects').classList.add('active');
+        document.getElementById('breadcrumb-proj').innerText = `Projects > ${p.title}`;
+        document.getElementById('proj-title').value = p.title;
+        document.getElementById('proj-desc').value = p.description || '';
+        document.getElementById('editor-pane').classList.add('active');
+        App.renderPaneTodos('all', p.id);
+    },
+
+    // DOM HELPERS
+    updateMidListItemTitle(id, val) {
+        const el = document.querySelector(`#card_${id} .card-title`);
+        if(el) el.innerText = val || 'Untitled';
+    },
+
+    // FOLDERS
+    renderSidebarFolders() {
+        const ul = document.getElementById('nav-folders'); ul.innerHTML='';
+        App.data.folders.forEach(f => {
+            const li = document.createElement('li');
+            li.className = 'nav-item'; li.setAttribute('data-mod', 'folder_'+f.id);
+            li.innerHTML = `<i class="ph ph-folder"></i> ${f.name} <i class="ph ph-x folder-actions" onclick="event.stopPropagation(); App.deleteFolder('${f.id}')" title="Delete folder"></i>`;
+            li.onclick = () => App.switchModule('folder_'+f.id);
+            ul.appendChild(li);
+        });
+    },
+    populateFolderDropdown(selectedVal) {
+        const sel = document.getElementById('rich-folder-select');
+        sel.innerHTML = `<option value="">None (Root Context)</option>`;
+        App.data.folders.forEach(f => { sel.innerHTML += `<option value="${f.id}" ${selectedVal===f.id?'selected':''}>${f.name}</option>`; });
+    },
+    promptFolderCreate() {
+        document.getElementById('prompt-title').innerText = 'New Folder Name';
+        document.getElementById('prompt-modal').classList.add('active');
+        const i = document.getElementById('prompt-input'); i.value=''; i.focus();
+        document.getElementById('prompt-confirm').onclick = async () => {
+            if(i.value.trim()) {
+                const f = { id:'fd_'+Date.now(), name:i.value.trim(), createdAt:Date.now() };
+                App.data.folders.push(f); await App.save('folders', f);
+                UI.renderSidebarFolders(); UI.closeModals();
+            }
+        };
+    },
+    AppDeleteFolder(id) { /* bound directly if needed */ }
+
+};
+// Assign missing folder del wrapper
+App.deleteFolder = async function(id) {
+    if(confirm('Delete folder and loose notes attachment inside?')) {
+        this.data.folders = this.data.folders.filter(x=>x.id!==id);
+        await DB.delete('folders',id);
+        // Any notes in this folder lose reference
+        this.data.notes.forEach(async n => { if(n.folderId===id){ n.folderId=null; await this.save('notes',n); }});
+        UI.renderSidebarFolders();
+        if(this.activeModule==='folder_'+id) this.switchModule('notes');
+    }
+}
+
+// Global UI
+UI.openProfileModal = () => { document.getElementById('profile-modal').classList.add('active'); document.getElementById('profile-name-input').value = App.data.profile.name; }
+UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(e=>e.classList.remove('active'));
+UI.preview = (url, type) => {
+    const c = document.getElementById('preview-content');
+    if(type==='image') c.innerHTML = `<img src="${url}" style="max-width:100%; max-height:80vh;">`;
+    else c.innerHTML = `<video controls autoplay src="${url}" style="max-width:100%; max-height:80vh;"></video>`;
+    document.getElementById('preview-modal').classList.add('active');
+};
+UI.previewMediaFromElement = (el, type) => UI.preview(el.src, type);
+UI.toggleSidebar = () => {
+    document.getElementById('app-sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+};
+UI.closeEditor = () => document.getElementById('editor-pane').classList.remove('active');
+
+window.onload = () => App.init();
+</script>
+</body>
+</html>
